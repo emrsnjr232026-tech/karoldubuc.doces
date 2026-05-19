@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Karol Dubuc | Admin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    
+    <section class="admin-lock" id="admin-lock" aria-label="Acesso restrito">
+      <form class="lock-card" id="lock-form">
+        <p class="eyebrow">Acesso restrito</p>
+        <h1>Area do admin</h1>
+        <p>Digite a senha para editar precos e itens do cardapio.</p>
+
+        <label>
+          Senha
+          <input id="admin-password" type="password" autocomplete="current-password" placeholder="Digite a senha" required />
+        </label>
+
+        <button class="whatsapp-button" type="submit">Entrar</button>
+        <p class="lock-error" id="lock-error" hidden>Senha incorreta.</p>
+      </form>
+    </section>
+
+    <main class="page-shell admin-page">
+      <section class="admin-hero">
+        <div>
+          <p class="eyebrow">Admin</p>
+          <h1>Editar cardapio</h1>
+          <p>Altere precos, adicione novos doces ou remova itens que nao estao disponiveis.</p>
+        </div>
+        <a class="back-link" href="index.html">Voltar para pedidos</a>
+      </section>
+
+      <section class="admin-layout" aria-label="Administracao do cardapio">
+        <form class="menu-panel admin-form" id="admin-form">
+          <div class="section-heading">
+            <p class="eyebrow">Novo item</p>
+            <h2>Adicionar doce</h2>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Nome do doce
+              <input id="admin-name" type="text" placeholder="Ex.: Cone trufado" required />
+            </label>
+
+            <label>
+              Preco
+              <input id="admin-price" type="number" min="0" step="0.01" placeholder="Ex.: 10,00" required />
+            </label>
+
+            <!-- NOVO CAMPO: Upload da Imagem do Doce -->
+            <label class="full-width">
+              Imagem do produto
+              <input id="admin-image" type="file" accept="image/*" required />
+            </label>
+
+            <label class="full-width">
+              Descricao
+              <textarea id="admin-description" rows="3" placeholder="Ex.: Casquinha recheada com brigadeiro cremoso" required></textarea>
+            </label>
+          </div>
+
+          <button class="whatsapp-button admin-submit" type="submit">Adicionar ao cardapio</button>
+        </form>
+
+        <section class="summary-panel admin-list-panel">
+          <div>
+            <p class="eyebrow">Cardapio atual</p>
+            <h2>Itens cadastrados</h2>
+          </div>
+
+          <div class="admin-list" id="admin-list"></div>
+
+          <button class="secondary-button" id="reset-menu" type="button">Restaurar cardapio inicial</button>
+          <p class="fine-print">As alteracoes ficam salvas neste navegador. Depois de editar, volte para a pagina de pedidos.</p>
+        </section>
+      </section>
+    </main>
+
+    <script src="admin.js"></script>
+  </body>
+</html>
