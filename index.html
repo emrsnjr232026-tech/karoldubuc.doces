@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Monte seu pedido de doces artesanais Karol Dubuc e envie sua comanda online." />
+    <title>Karol Dubuc | Pedidos</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Botão para acessar a área administrativa -->
+
+    <main class="page-shell">
+      <section class="intro" aria-labelledby="page-title">
+        <div class="brand-mark">
+          <img src="assets/post-agenda.png" alt="Karol Dubuc Doces Artesanais" />
+        </div>
+
+        <div class="intro-copy">
+          <p class="eyebrow">Agenda da semana aberta</p>
+          <h1 id="page-title">Monte seu pedido</h1>
+          <p>
+            Escolha seus doces favoritos e envie seu pedido direto para a fila de comandas.
+
+          </p>
+        </div>
+      </section>
+<a class="back-link" href="admin.html">Acessar admin</a>
+      <section class="order-layout" aria-label="Coleta de pedidos">
+        <form class="menu-panel" id="order-form">
+          <div class="section-heading">
+            <p class="eyebrow">Cardapio</p>
+            <h2>Doces disponiveis</h2>
+          </div>
+
+          <div class="product-grid" id="product-grid"></div>
+
+          <div class="section-heading details-heading">
+            <p class="eyebrow">Seus dados</p>
+            <h2>Como vamos combinar?</h2>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Nome
+              <input id="customer-name" name="customer-name" type="text" autocomplete="name" placeholder="Seu nome" required />
+            </label>
+
+            <label>
+              Telefone
+              <input id="customer-phone" name="customer-phone" type="tel" autocomplete="tel" placeholder="(44) 99999-9999" required />
+            </label>
+
+            <label>
+              Dia desejado
+              <select id="order-day" name="order-day" required>
+                <option value="Sexta-feira">Sexta-feira</option>
+                <option value="Sabado">Sabado</option>
+                <option value="Domingo">Domingo</option>
+              </select>
+            </label>
+
+            <label>
+              Entrega ou retirada
+              <select id="delivery-method" name="delivery-method" required>
+                <option value="Retirada">Retirada</option>
+                <option value="Entrega">Entrega</option>
+              </select>
+            </label>
+
+            <label class="full-width">
+              Endereco ou ponto de referencia
+              <input id="address" name="address" type="text" placeholder="Preencha se for entrega" />
+            </label>
+
+            <label class="full-width">
+              Observacao
+              <textarea id="notes" name="notes" rows="3" placeholder="Ex.: sem granulado, horario ideal, presente..."></textarea>
+            </label>
+          </div>
+        </form>
+
+        <aside class="summary-panel" aria-label="Resumo do pedido">
+          <div>
+            <p class="eyebrow">Resumo</p>
+            <h2>Seu pedido</h2>
+          </div>
+
+          <div class="summary-list" id="summary-list">
+            <p class="empty">Escolha pelo menos um doce para montar seu pedido.</p>
+          </div>
+
+          <div class="summary-total">
+            <span>Total estimado</span>
+            <strong id="summary-total">R$ 0,00</strong>
+          </div>
+
+          <button class="whatsapp-button" id="send-order" type="button">
+            Finalizar pedido
+          </button>
+
+          <p class="fine-print">
+            Depois de enviado, seu pedido entra na fila por ordem de chegada.
+          </p>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
