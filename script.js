@@ -1,11 +1,4 @@
 import { googleSheetsWebhookUrl } from "./integrations-config.js";
-import {
-  getProducts,
-  onDatabaseChange,
-  replaceProducts,
-  saveOrder,
-  setupDatabase
-} from "./database.js";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -21,38 +14,7 @@ const sendOrderButton = document.getElementById("send-order");
 let products = [];
 const cart = {};
 
-setupDatabase();
-loadProducts();
-renderProducts();
-renderSummary();
-syncProductsFromOnline();
-
-onDatabaseChange(() => {
-  loadProducts();
-  renderProducts();
-  renderSummary();
-});
-
-function loadProducts() {
-  products = getProducts();
-}
-
-async function syncProductsFromOnline() {
-  if (!googleSheetsWebhookUrl) return;
-
-  try {
-    const onlineProducts = await loadProductsFromGoogleSheets();
-
-    if (Array.isArray(onlineProducts)) {
-      replaceProducts(onlineProducts);
-      loadProducts();
-      renderProducts();
-      renderSummary();
-    }
-  } catch (error) {
-    console.warn("Nao foi possivel carregar o cardapio online. Usando cardapio local.", error);
-  }
-}
+loadProductsFromOnline();
 
 function getSelectedProducts() {
   return products
@@ -75,35 +37,90 @@ function getOrderTotal(items) {
   return items.reduce((total, item) => total + item.total, 0);
 }
 
+async function loadProductsFromOnline() {
+  try {
+    const response = await fetch(
+      `${googleSheetsWebhookUrl}?action=products`
+    );
+
+    const data = await response.json();
+
+    products = data.products || [];
+
+    renderProducts();
+    renderSummary();
+
+  } catch (error) {
+    console.error("Erro ao carregar cardapio:", error);
+
+    productGrid.innerHTML = `
+      <p class="empty">
+        Não foi possível carregar o cardápio.
+      </p>
+    `;
+  }
+}
+
 function renderProducts() {
   if (!productGrid) return;
 
   productGrid.innerHTML = "";
 
   if (!products.length) {
-    productGrid.innerHTML = '<p class="empty">Nenhum produto cadastrado no momento.</p>';
+    productGrid.innerHTML = `
+      <p class="empty">
+        Nenhum produto cadastrado no momento.
+      </p>
+    `;
     return;
   }
 
   products.forEach((product) => {
     const quantity = cart[product.id] || 0;
-    const image = product.image || "assets/post-agenda.png";
+
+    const image =
+      product.image ||
+      "assets/post-agenda.png";
 
     const card = document.createElement("article");
+
     card.className = "product-card";
 
     card.innerHTML = `
       <div>
-        <img src="${image}" alt="${product.name}" class="product-image" />
+        <img
+          src="${image}"
+          alt="${product.name}"
+          class="product-image"
+        />
+
         <h3>${product.name}</h3>
+
         <p>${product.description || ""}</p>
-        <span class="price">${currencyFormatter.format(Number(product.price) || 0)}</span>
+
+        <span class="price">
+          ${currencyFormatter.format(Number(product.price) || 0)}
+        </span>
       </div>
 
       <div class="quantity">
-        <button type="button" data-action="decrease" data-id="${product.id}" aria-label="Diminuir ${product.name}">-</button>
+        <button
+          type="button"
+          data-action="decrease"
+          data-id="${product.id}"
+        >
+          -
+        </button>
+
         <span>${quantity}</span>
-        <button type="button" data-action="increase" data-id="${product.id}" aria-label="Aumentar ${product.name}">+</button>
+
+        <button
+          type="button"
+          data-action="increase"
+          data-id="${product.id}"
+        >
+          +
+        </button>
       </div>
     `;
 
@@ -113,9 +130,11 @@ function renderProducts() {
 
 productGrid?.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
+
   if (!button) return;
 
   const productId = button.dataset.id;
+
   const currentQuantity = cart[productId] || 0;
 
   if (button.dataset.action === "increase") {
@@ -123,7 +142,10 @@ productGrid?.addEventListener("click", (event) => {
   }
 
   if (button.dataset.action === "decrease") {
-    cart[productId] = Math.max(0, currentQuantity - 1);
+    cart[productId] = Math.max(
+      0,
+      currentQuantity - 1
+    );
   }
 
   renderProducts();
@@ -134,39 +156,85 @@ function renderSummary() {
   if (!summaryList) return;
 
   const selectedProducts = getSelectedProducts();
+
   summaryList.innerHTML = "";
 
   if (!selectedProducts.length) {
-    summaryList.innerHTML = '<p class="empty">Escolha pelo menos um doce para montar seu pedido.</p>';
+    summaryList.innerHTML = `
+      <p class="empty">
+        Escolha pelo menos um doce.
+      </p>
+    `;
   }
 
   selectedProducts.forEach((item) => {
     const row = document.createElement("div");
+
     row.className = "summary-item";
+
     row.innerHTML = `
-      <span><strong>${item.quantity}x</strong> ${item.name}</span>
-      <strong>${currencyFormatter.format(item.total)}</strong>
+      <span>
+        <strong>${item.quantity}x</strong>
+        ${item.name}
+      </span>
+
+      <strong>
+        ${currencyFormatter.format(item.total)}
+      </strong>
     `;
+
     summaryList.appendChild(row);
   });
 
   if (summaryTotalElement) {
-    summaryTotalElement.textContent = currencyFormatter.format(getOrderTotal(selectedProducts));
+    summaryTotalElement.textContent =
+      currencyFormatter.format(
+        getOrderTotal(selectedProducts)
+      );
   }
 }
 
-sendOrderButton?.addEventListener("click", handleSubmitOrder);
+sendOrderButton?.addEventListener(
+  "click",
+  handleSubmitOrder
+);
 
 async function handleSubmitOrder() {
-  const customerName = document.getElementById("customer-name").value.trim();
-  const customerPhone = document.getElementById("customer-phone").value.trim();
-  const orderDay = document.getElementById("order-day").value;
-  const deliveryMethod = document.getElementById("delivery-method").value;
-  const address = document.getElementById("address").value.trim();
-  const notes = document.getElementById("notes").value.trim();
-  const selectedProducts = getSelectedProducts();
 
-  if (!orderForm.reportValidity()) return;
+  const customerName =
+    document.getElementById("customer-name")
+    .value
+    .trim();
+
+  const customerPhone =
+    document.getElementById("customer-phone")
+    .value
+    .trim();
+
+  const orderDay =
+    document.getElementById("order-day")
+    .value;
+
+  const deliveryMethod =
+    document.getElementById("delivery-method")
+    .value;
+
+  const address =
+    document.getElementById("address")
+    .value
+    .trim();
+
+  const notes =
+    document.getElementById("notes")
+    .value
+    .trim();
+
+  const selectedProducts =
+    getSelectedProducts();
+
+  if (!orderForm.reportValidity()) {
+    return;
+  }
 
   if (!selectedProducts.length) {
     alert("Escolha pelo menos um produto.");
@@ -174,92 +242,84 @@ async function handleSubmitOrder() {
   }
 
   sendOrderButton.disabled = true;
-  sendOrderButton.textContent = "Enviando pedido...";
+
+  sendOrderButton.textContent =
+    "Enviando pedido...";
 
   try {
-    const order = saveOrder({
-      customerName,
-      customerPhone,
-      orderDay,
-      deliveryMethod,
-      address,
-      notes,
-      items: selectedProducts,
-      itemsText: selectedProducts.map((item) => `${item.quantity}x ${item.name}`).join(" | "),
-      total: getOrderTotal(selectedProducts),
-      status: "Recebido"
-    });
 
-    await sendOrderToGoogleSheets(order);
+    const order = {
+      id: Date.now().toString(),
+
+      customerName,
+
+      customerPhone,
+
+      orderDay,
+
+      deliveryMethod,
+
+      address,
+
+      notes,
+
+      itemsText:
+        selectedProducts
+          .map((item) =>
+            `${item.quantity}x ${item.name}`
+          )
+          .join(" | "),
+
+      total:
+        getOrderTotal(selectedProducts),
+
+      status: "Recebido"
+    };
+
+    await fetch(
+      googleSheetsWebhookUrl,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+          action: "saveOrder",
+          order
+        })
+      }
+    );
 
     Object.keys(cart).forEach((key) => {
       delete cart[key];
     });
 
     orderForm.reset();
+
     renderProducts();
+
     renderSummary();
-    alert(`Pedido enviado! Sua comanda e ${order.queueNumber || order.commandNumber}.`);
+
+    alert(
+      "Pedido enviado com sucesso!"
+    );
+
   } catch (error) {
+
     console.error(error);
-    alert("Nao foi possivel enviar o pedido. Tente novamente em instantes.");
+
+    alert(
+      "Erro ao enviar pedido."
+    );
+
   } finally {
+
     sendOrderButton.disabled = false;
-    sendOrderButton.textContent = "Finalizar pedido";
+
+    sendOrderButton.textContent =
+      "Finalizar pedido";
   }
-}
-
-async function sendOrderToGoogleSheets(order) {
-  if (!googleSheetsWebhookUrl) return;
-
-  try {
-    await fetch(googleSheetsWebhookUrl, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      body: JSON.stringify({
-        action: "saveOrder",
-        order
-      })
-    });
-  } catch (error) {
-    console.warn("Pedido salvo no banco local, mas nao enviado para a planilha.", error);
-  }
-}
-
-function loadProductsFromGoogleSheets() {
-  const callbackName = `karolCatalogCallback_${Date.now()}`;
-  const url = new URL(googleSheetsWebhookUrl);
-
-  url.searchParams.set("action", "products");
-  url.searchParams.set("callback", callbackName);
-
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    const timeoutId = window.setTimeout(() => {
-      cleanup();
-      reject(new Error("Tempo esgotado ao carregar cardapio online."));
-    }, 8000);
-
-    window[callbackName] = (data) => {
-      cleanup();
-      resolve(Array.isArray(data?.products) ? data.products : []);
-    };
-
-    script.onerror = () => {
-      cleanup();
-      reject(new Error("Erro ao carregar cardapio online."));
-    };
-
-    script.src = url.toString();
-    document.body.appendChild(script);
-
-    function cleanup() {
-      window.clearTimeout(timeoutId);
-      delete window[callbackName];
-      script.remove();
-    }
-  });
 }
