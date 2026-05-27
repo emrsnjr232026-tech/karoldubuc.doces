@@ -1,180 +1,155 @@
-const PRODUCTS_KEY = "karolDubucProducts";
-const ORDERS_KEY = "karolDubucOrders";
-const DATABASE_EVENT = "karolDubucDatabaseChanged";
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Karol Dubuc | Admin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    
+    <section class="admin-lock" id="admin-lock" aria-label="Acesso restrito">
+      <form class="lock-card" id="lock-form">
+        <p class="eyebrow">Acesso restrito</p>
+        <h1>Area do admin</h1>
+          <p>Digite a senha para editar precos, itens do cardapio e acompanhar comandas.</p>
 
-export const defaultProducts = [
-  {
-    id: "brownie",
-    name: "Brownie",
-    description: "Quadrado intenso de chocolate, casquinha fina e massa molhadinha.",
-    price: 8,
-    image: ""
-  },
-  {
-    id: "pudim",
-    name: "Pudim",
-    description: "Pudim artesanal com calda de caramelo, sob encomenda.",
-    price: 35,
-    image: ""
-  },
-  {
-    id: "brigadeiro",
-    name: "Brigadeiro",
-    description: "Brigadeiro tradicional enrolado, ideal para presentear ou dividir.",
-    price: 3,
-    image: ""
-  },
-  {
-    id: "bolo-pote",
-    name: "Bolo de pote",
-    description: "Camadas cremosas com massa de chocolate e recheio generoso.",
-    price: 12,
-    image: ""
-  }
-];
+        <label>
+          Senha
+          <input id="admin-password" type="password" autocomplete="current-password" placeholder="Digite a senha" required />
+        </label>
 
-export function setupDatabase() {
-  if (!readList(PRODUCTS_KEY).length) {
-    saveList(PRODUCTS_KEY, defaultProducts);
-  }
+        <button class="whatsapp-button" type="submit">Entrar</button>
+        <p class="lock-error" id="lock-error" hidden>Senha incorreta.</p>
+      </form>
+    </section>
 
-  if (!localStorage.getItem(ORDERS_KEY)) {
-    saveList(ORDERS_KEY, []);
-  }
-}
+    <main class="page-shell admin-page">
+      <section class="admin-hero">
+        <div>
+          <p class="eyebrow">Admin</p>
+          <h1>Admin de pedidos</h1>
+          <p>Altere precos, adicione doces e acompanhe as comandas recebidas pelo site.</p>
+        </div>
+        <a class="back-link" href="index.html">Voltar para pedidos</a>
+      </section>
 
-export function getProducts() {
-  setupDatabase();
-  return readList(PRODUCTS_KEY).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-}
+      <section class="admin-stats" aria-label="Resumo administrativo">
+        <article>
+          <span>Produtos ativos</span>
+          <strong id="stat-products">0</strong>
+        </article>
+        <article>
+          <span>Pedidos recebidos</span>
+          <strong id="stat-orders">0</strong>
+        </article>
+        <article>
+          <span>Pendentes</span>
+          <strong id="stat-pending">0</strong>
+        </article>
+        <article>
+          <span>Total vendido</span>
+          <strong id="stat-revenue">R$ 0,00</strong>
+        </article>
+      </section>
 
-export function saveProduct(product) {
-  const products = getProducts();
-  const payload = {
-    ...product,
-    id: product.id || createId(product.name),
-    price: Number(product.price) || 0,
-    updatedAt: new Date().toISOString()
-  };
+      <section class="admin-layout" aria-label="Administracao do cardapio">
+        <form class="menu-panel admin-form" id="admin-form">
+          <div class="section-heading">
+            <p class="eyebrow" id="product-form-mode">Novo item</p>
+            <h2 id="product-form-title">Adicionar doce</h2>
+          </div>
+          <input id="editing-product-id" type="hidden" />
 
-  const index = products.findIndex((item) => item.id === payload.id);
+          <div class="form-grid">
+            <label>
+              Nome do doce
+              <input id="admin-name" type="text" placeholder="Ex.: Cone trufado" required />
+            </label>
 
-  if (index >= 0) {
-    products[index] = payload;
-  } else {
-    payload.createdAt = new Date().toISOString();
-    products.push(payload);
-  }
+            <label>
+              Preco
+              <input id="admin-price" type="number" min="0" step="0.01" placeholder="Ex.: 10,00" required />
+            </label>
 
-  saveList(PRODUCTS_KEY, products);
-  notifyDatabaseChanged();
-  return payload;
-}
+            <!-- NOVO CAMPO: Upload da Imagem do Doce -->
+            <label class="full-width">
+              Imagem do produto
+              <input id="admin-image" type="file" accept="image/*" />
+            </label>
 
-export function deleteProduct(productId) {
-  saveList(PRODUCTS_KEY, getProducts().filter((product) => product.id !== productId));
-  notifyDatabaseChanged();
-}
+            <label class="full-width">
+              Descricao
+              <textarea id="admin-description" rows="3" placeholder="Ex.: Casquinha recheada com brigadeiro cremoso" required></textarea>
+            </label>
+          </div>
 
-export function restoreDefaultProducts() {
-  saveList(PRODUCTS_KEY, defaultProducts);
-  notifyDatabaseChanged();
-}
+          <div class="form-actions">
+            <button class="whatsapp-button admin-submit" id="product-submit" type="submit">Adicionar ao cardapio</button>
+            <button class="secondary-button" id="cancel-edit" type="button" hidden>Cancelar edicao</button>
+          </div>
+        </form>
 
-export function replaceProducts(products) {
-  if (!Array.isArray(products)) return;
+        <section class="summary-panel admin-list-panel">
+          <div>
+            <p class="eyebrow">Cardapio atual</p>
+            <h2>Itens cadastrados</h2>
+          </div>
 
-  saveList(PRODUCTS_KEY, products.filter((product) => product && product.name));
-  notifyDatabaseChanged();
-}
+          <p class="save-status" id="save-status" role="status" hidden></p>
+          <div class="admin-list" id="admin-list"></div>
 
-export function getOrders() {
-  setupDatabase();
-  return readList(ORDERS_KEY)
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-    .map((order, index) => ({
-      ...order,
-      queueNumber: index + 1
-    }));
-}
+          <button class="secondary-button" id="reset-menu" type="button">Restaurar cardapio inicial</button>
+          <p class="fine-print">As alteracoes sao enviadas para a planilha configurada no Google Apps Script.</p>
+        </section>
+      </section>
 
-export function saveOrder(order) {
-  const orders = getOrders();
-  const payload = {
-    ...order,
-    id: order.id || createId("pedido"),
-    commandNumber: order.commandNumber || getNextCommandNumber(orders),
-    status: order.status || "Recebido",
-    createdAt: order.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+      <section class="orders-panel" aria-label="Comandas recebidas">
+        <div class="orders-heading">
+          <div>
+            <p class="eyebrow">Comandas</p>
+            <h2>Pedidos recebidos</h2>
+          </div>
+          <button class="secondary-button" id="export-orders" type="button">Baixar planilha CSV</button>
+        </div>
 
-  const index = orders.findIndex((item) => item.id === payload.id);
+        <div class="orders-list" id="orders-list"></div>
+      </section>
+    </main>
 
-  if (index >= 0) {
-    orders[index] = payload;
-  } else {
-    orders.push(payload);
-  }
+    <script>
+      (function () {
+        var adminPassword = "Deus.Deus@26";
+        var adminSessionKey = "karolDubucAdminUnlocked";
+        var lock = document.getElementById("admin-lock");
+        var form = document.getElementById("lock-form");
+        var input = document.getElementById("admin-password");
+        var error = document.getElementById("lock-error");
 
-  saveList(ORDERS_KEY, orders);
-  notifyDatabaseChanged();
-  return payload;
-}
+        function updateLockState() {
+          var unlocked = sessionStorage.getItem(adminSessionKey) === "true";
+          lock.hidden = unlocked;
+          document.body.classList.toggle("is-locked", !unlocked);
+        }
 
-export function updateOrderStatus(orderId, status) {
-  const orders = getOrders().map((order) => (
-    order.id === orderId
-      ? { ...order, status, updatedAt: new Date().toISOString() }
-      : order
-  ));
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
 
-  saveList(ORDERS_KEY, orders);
-  notifyDatabaseChanged();
-}
+          if (input.value.trim() === adminPassword) {
+            sessionStorage.setItem(adminSessionKey, "true");
+            error.hidden = true;
+            updateLockState();
+            return;
+          }
 
-export function deleteOrder(orderId) {
-  saveList(ORDERS_KEY, getOrders().filter((order) => order.id !== orderId));
-  notifyDatabaseChanged();
-}
+          error.hidden = false;
+          input.select();
+        });
 
-export function onDatabaseChange(callback) {
-  window.addEventListener(DATABASE_EVENT, callback);
-  window.addEventListener("storage", (event) => {
-    if ([PRODUCTS_KEY, ORDERS_KEY].includes(event.key)) {
-      callback();
-    }
-  });
-}
-
-function readList(key) {
-  try {
-    const data = JSON.parse(localStorage.getItem(key) || "[]");
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveList(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function notifyDatabaseChanged() {
-  window.dispatchEvent(new CustomEvent(DATABASE_EVENT));
-}
-
-function getNextCommandNumber(orders) {
-  return orders.reduce((max, order) => Math.max(max, Number(order.commandNumber) || 0), 0) + 1;
-}
-
-function createId(value) {
-  const slug = String(value || "item")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-
-  return `${slug || "item"}-${Date.now()}`;
-}
+        updateLockState();
+      })();
+    </script>
+    <script type="module" src="admin.js"></script>
+  </body>
+</html>
