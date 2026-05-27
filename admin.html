@@ -90,17 +90,17 @@
         <div>
 
           <p class="eyebrow">
-            Admin
+            Painel administrativo
           </p>
 
           <h1>
-            Admin de pedidos
+            Controle de pedidos
           </h1>
 
           <p>
-            Altere preços, adicione doces
-            e acompanhe as comandas
-            recebidas pelo site.
+            Gerencie o produto da semana,
+            acompanhe pedidos em tempo real
+            e altere informações do site.
           </p>
 
         </div>
@@ -121,7 +121,7 @@
 
         <article>
           <span>
-            Produtos ativos
+            Produto ativo
           </span>
 
           <strong id="stat-products">
@@ -177,11 +177,11 @@
               class="eyebrow"
               id="product-form-mode"
             >
-              Novo item
+              Produto da semana
             </p>
 
             <h2 id="product-form-title">
-              Produto da semana
+              Atualizar cardápio
             </h2>
 
           </div>
@@ -276,11 +276,11 @@
           <div>
 
             <p class="eyebrow">
-              Cardápio atual
+              Cardápio online
             </p>
 
             <h2>
-              Produto ativo
+              Produto ativo no site
             </h2>
 
           </div>
@@ -314,9 +314,10 @@
           </button>
 
           <p class="fine-print">
-            As alterações são sincronizadas
-            automaticamente com a planilha
-            online e com o site.
+            Todas as alterações são
+            sincronizadas automaticamente
+            com a planilha online e com o
+            site dos clientes.
           </p>
 
         </section>
@@ -342,21 +343,25 @@
 
           </div>
 
-          <button
-            class="secondary-button"
-            id="refresh-orders"
-            type="button"
-          >
-            Atualizar comandas
-          </button>
+          <div class="orders-buttons">
 
-          <button
-            class="secondary-button"
-            id="export-orders"
-            type="button"
-          >
-            Baixar CSV
-          </button>
+            <button
+              class="secondary-button"
+              id="refresh-orders"
+              type="button"
+            >
+              Atualizar comandas
+            </button>
+
+            <button
+              class="secondary-button"
+              id="export-orders"
+              type="button"
+            >
+              Baixar CSV
+            </button>
+
+          </div>
 
         </div>
 
@@ -368,6 +373,84 @@
       </section>
 
     </main>
+
+    <script>
+      (function () {
+
+        const adminPassword =
+          "Deus.Deus@26";
+
+        const adminSessionKey =
+          "karolDubucAdminUnlocked";
+
+        const lock =
+          document.getElementById(
+            "admin-lock"
+          );
+
+        const form =
+          document.getElementById(
+            "lock-form"
+          );
+
+        const input =
+          document.getElementById(
+            "admin-password"
+          );
+
+        const error =
+          document.getElementById(
+            "lock-error"
+          );
+
+        function updateLockState() {
+
+          const unlocked =
+            sessionStorage.getItem(
+              adminSessionKey
+            ) === "true";
+
+          lock.hidden = unlocked;
+
+          document.body.classList.toggle(
+            "is-locked",
+            !unlocked
+          );
+        }
+
+        form.addEventListener(
+          "submit",
+          function (event) {
+
+            event.preventDefault();
+
+            if (
+              input.value.trim() ===
+              adminPassword
+            ) {
+
+              sessionStorage.setItem(
+                adminSessionKey,
+                "true"
+              );
+
+              error.hidden = true;
+
+              updateLockState();
+
+              return;
+            }
+
+            error.hidden = false;
+
+            input.select();
+          }
+        );
+
+        updateLockState();
+
+      })();
+    </script>
 
     <script
       type="module"
