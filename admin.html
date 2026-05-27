@@ -2,156 +2,377 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>Karol Dubuc | Admin</title>
-    <link rel="stylesheet" href="styles.css" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+
+    <meta
+      name="robots"
+      content="noindex, nofollow"
+    />
+
+    <title>
+      Karol Dubuc | Admin
+    </title>
+
+    <link
+      rel="stylesheet"
+      href="styles.css"
+    />
   </head>
+
   <body>
-    
-    <section class="admin-lock" id="admin-lock" aria-label="Acesso restrito">
-      <form class="lock-card" id="lock-form">
-        <p class="eyebrow">Acesso restrito</p>
-        <h1>Area do admin</h1>
-          <p>Digite a senha para editar precos, itens do cardapio e acompanhar comandas.</p>
+
+    <section
+      class="admin-lock"
+      id="admin-lock"
+      aria-label="Acesso restrito"
+    >
+
+      <form
+        class="lock-card"
+        id="lock-form"
+      >
+
+        <p class="eyebrow">
+          Acesso restrito
+        </p>
+
+        <h1>
+          Área do admin
+        </h1>
+
+        <p>
+          Digite a senha para editar
+          preços, itens do cardápio e
+          acompanhar comandas.
+        </p>
 
         <label>
+
           Senha
-          <input id="admin-password" type="password" autocomplete="current-password" placeholder="Digite a senha" required />
+
+          <input
+            id="admin-password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Digite a senha"
+            required
+          />
+
         </label>
 
-        <button class="whatsapp-button" type="submit">Entrar</button>
-        <p class="lock-error" id="lock-error" hidden>Senha incorreta.</p>
+        <button
+          class="whatsapp-button"
+          type="submit"
+        >
+          Entrar
+        </button>
+
+        <p
+          class="lock-error"
+          id="lock-error"
+          hidden
+        >
+          Senha incorreta.
+        </p>
+
       </form>
+
     </section>
 
     <main class="page-shell admin-page">
+
       <section class="admin-hero">
+
         <div>
-          <p class="eyebrow">Admin</p>
-          <h1>Admin de pedidos</h1>
-          <p>Altere precos, adicione doces e acompanhe as comandas recebidas pelo site.</p>
+
+          <p class="eyebrow">
+            Admin
+          </p>
+
+          <h1>
+            Admin de pedidos
+          </h1>
+
+          <p>
+            Altere preços, adicione doces
+            e acompanhe as comandas
+            recebidas pelo site.
+          </p>
+
         </div>
-        <a class="back-link" href="index.html">Voltar para pedidos</a>
+
+        <a
+          class="back-link"
+          href="index.html"
+        >
+          Voltar para pedidos
+        </a>
+
       </section>
 
-      <section class="admin-stats" aria-label="Resumo administrativo">
+      <section
+        class="admin-stats"
+        aria-label="Resumo administrativo"
+      >
+
         <article>
-          <span>Produtos ativos</span>
-          <strong id="stat-products">0</strong>
+          <span>
+            Produtos ativos
+          </span>
+
+          <strong id="stat-products">
+            0
+          </strong>
         </article>
+
         <article>
-          <span>Pedidos recebidos</span>
-          <strong id="stat-orders">0</strong>
+          <span>
+            Pedidos recebidos
+          </span>
+
+          <strong id="stat-orders">
+            0
+          </strong>
         </article>
+
         <article>
-          <span>Pendentes</span>
-          <strong id="stat-pending">0</strong>
+          <span>
+            Pendentes
+          </span>
+
+          <strong id="stat-pending">
+            0
+          </strong>
         </article>
+
         <article>
-          <span>Total vendido</span>
-          <strong id="stat-revenue">R$ 0,00</strong>
+          <span>
+            Total vendido
+          </span>
+
+          <strong id="stat-revenue">
+            R$ 0,00
+          </strong>
         </article>
+
       </section>
 
-      <section class="admin-layout" aria-label="Administracao do cardapio">
-        <form class="menu-panel admin-form" id="admin-form">
+      <section
+        class="admin-layout"
+        aria-label="Administracao do cardapio"
+      >
+
+        <form
+          class="menu-panel admin-form"
+          id="admin-form"
+        >
+
           <div class="section-heading">
-            <p class="eyebrow" id="product-form-mode">Novo item</p>
-            <h2 id="product-form-title">Adicionar doce</h2>
+
+            <p
+              class="eyebrow"
+              id="product-form-mode"
+            >
+              Novo item
+            </p>
+
+            <h2 id="product-form-title">
+              Produto da semana
+            </h2>
+
           </div>
-          <input id="editing-product-id" type="hidden" />
+
+          <input
+            id="editing-product-id"
+            type="hidden"
+          />
 
           <div class="form-grid">
+
             <label>
+
               Nome do doce
-              <input id="admin-name" type="text" placeholder="Ex.: Cone trufado" required />
+
+              <input
+                id="admin-name"
+                type="text"
+                placeholder="Ex.: Brownie Dubai"
+                required
+              />
+
             </label>
 
             <label>
-              Preco
-              <input id="admin-price" type="number" min="0" step="0.01" placeholder="Ex.: 10,00" required />
+
+              Preço
+
+              <input
+                id="admin-price"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Ex.: 16.50"
+                required
+              />
+
             </label>
 
-            <!-- NOVO CAMPO: Upload da Imagem do Doce -->
             <label class="full-width">
+
               Imagem do produto
-              <input id="admin-image" type="file" accept="image/*" />
+
+              <input
+                id="admin-image"
+                type="file"
+                accept="image/*"
+              />
+
             </label>
 
             <label class="full-width">
-              Descricao
-              <textarea id="admin-description" rows="3" placeholder="Ex.: Casquinha recheada com brigadeiro cremoso" required></textarea>
+
+              Descrição
+
+              <textarea
+                id="admin-description"
+                rows="3"
+                placeholder="Ex.: Brownie artesanal premium recheado"
+                required
+              ></textarea>
+
             </label>
+
           </div>
 
           <div class="form-actions">
-            <button class="whatsapp-button admin-submit" id="product-submit" type="submit">Adicionar ao cardapio</button>
-            <button class="secondary-button" id="cancel-edit" type="button" hidden>Cancelar edicao</button>
+
+            <button
+              class="whatsapp-button admin-submit"
+              id="product-submit"
+              type="submit"
+            >
+              Salvar produto
+            </button>
+
+            <button
+              class="secondary-button"
+              id="cancel-edit"
+              type="button"
+              hidden
+            >
+              Cancelar edição
+            </button>
+
           </div>
+
         </form>
 
         <section class="summary-panel admin-list-panel">
+
           <div>
-            <p class="eyebrow">Cardapio atual</p>
-            <h2>Itens cadastrados</h2>
+
+            <p class="eyebrow">
+              Cardápio atual
+            </p>
+
+            <h2>
+              Produto ativo
+            </h2>
+
           </div>
 
-          <p class="save-status" id="save-status" role="status" hidden></p>
-          <div class="admin-list" id="admin-list"></div>
+          <p
+            class="save-status"
+            id="save-status"
+            role="status"
+            hidden
+          ></p>
 
-          <button class="secondary-button" id="clear-menu" type="button">Limpar cardapio</button>
-          <button class="secondary-button" id="reset-menu" type="button">Restaurar cardapio inicial</button>
-          <p class="fine-print">As alteracoes ficam salvas no banco local deste navegador.</p>
+          <div
+            class="admin-list"
+            id="admin-list"
+          ></div>
+
+          <button
+            class="secondary-button"
+            id="clear-menu"
+            type="button"
+          >
+            Limpar cardápio
+          </button>
+
+          <button
+            class="secondary-button"
+            id="reset-menu"
+            type="button"
+          >
+            Restaurar padrão
+          </button>
+
+          <p class="fine-print">
+            As alterações são sincronizadas
+            automaticamente com a planilha
+            online e com o site.
+          </p>
+
         </section>
+
       </section>
 
-      <section class="orders-panel" aria-label="Comandas recebidas">
+      <section
+        class="orders-panel"
+        aria-label="Comandas recebidas"
+      >
+
         <div class="orders-heading">
+
           <div>
-            <p class="eyebrow">Comandas</p>
-            <h2>Pedidos recebidos</h2>
+
+            <p class="eyebrow">
+              Comandas
+            </p>
+
+            <h2>
+              Pedidos recebidos
+            </h2>
+
           </div>
-          <button class="secondary-button" id="refresh-orders" type="button">Atualizar comandas</button>
-          <button class="secondary-button" id="export-orders" type="button">Baixar planilha CSV</button>
+
+          <button
+            class="secondary-button"
+            id="refresh-orders"
+            type="button"
+          >
+            Atualizar comandas
+          </button>
+
+          <button
+            class="secondary-button"
+            id="export-orders"
+            type="button"
+          >
+            Baixar CSV
+          </button>
+
         </div>
 
-        <div class="orders-list" id="orders-list"></div>
+        <div
+          class="orders-list"
+          id="orders-list"
+        ></div>
+
       </section>
+
     </main>
 
-    <script>
-      (function () {
-        var adminPassword = "Deus.Deus@26";
-        var adminSessionKey = "karolDubucAdminUnlocked";
-        var lock = document.getElementById("admin-lock");
-        var form = document.getElementById("lock-form");
-        var input = document.getElementById("admin-password");
-        var error = document.getElementById("lock-error");
+    <script
+      type="module"
+      src="admin.js"
+    ></script>
 
-        function updateLockState() {
-          var unlocked = sessionStorage.getItem(adminSessionKey) === "true";
-          lock.hidden = unlocked;
-          document.body.classList.toggle("is-locked", !unlocked);
-        }
-
-        form.addEventListener("submit", function (event) {
-          event.preventDefault();
-
-          if (input.value.trim() === adminPassword) {
-            sessionStorage.setItem(adminSessionKey, "true");
-            error.hidden = true;
-            updateLockState();
-            return;
-          }
-
-          error.hidden = false;
-          input.select();
-        });
-
-        updateLockState();
-      })();
-    </script>
-    <script type="module" src="admin.js"></script>
   </body>
 </html>
