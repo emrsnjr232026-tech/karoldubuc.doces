@@ -1,141 +1,287 @@
-const PRODUCTS_KEY = "karolDubucProducts";
-const DATABASE_EVENT = "karolDubucDatabaseChanged";
+const ORDERS_SHEET_NAME = "Comandas";
+const PRODUCTS_SHEET_NAME = "Cardapio";
 
-export const defaultProducts = [
-  {
-    id: "brownie",
-    name: "Brownie",
-    description: "Quadrado intenso de chocolate, casquinha fina e massa molhadinha.",
-    price: 8,
-    image: ""
-  },
-  {
-    id: "pudim",
-    name: "Pudim",
-    description: "Pudim artesanal com calda de caramelo, sob encomenda.",
-    price: 35,
-    image: ""
-  },
-  {
-    id: "brigadeiro",
-    name: "Brigadeiro",
-    description: "Brigadeiro tradicional enrolado, ideal para presentear ou dividir.",
-    price: 3,
-    image: ""
-  },
-  {
-    id: "bolo-pote",
-    name: "Bolo de pote",
-    description: "Camadas cremosas com massa de chocolate e recheio generoso.",
-    price: 12,
-    image: ""
-  }
+const DEFAULT_PRODUCTS = [
+  ["brownie", "Brownie", "Quadrado intenso de chocolate, casquinha fina e massa molhadinha.", 8, "", "SIM"],
+  ["pudim", "Pudim", "Pudim artesanal com calda de caramelo, sob encomenda.", 35, "", "SIM"],
+  ["brigadeiro", "Brigadeiro", "Brigadeiro tradicional enrolado, ideal para presentear ou dividir.", 3, "", "SIM"],
+  ["bolo-pote", "Bolo de pote", "Camadas cremosas com massa de chocolate e recheio generoso.", 12, "", "SIM"]
 ];
 
-export function setupDatabase() {
-  if (!readList(PRODUCTS_KEY).length) {
-    saveList(PRODUCTS_KEY, defaultProducts);
+function doGet(event) {
+  const action = event.parameter.action || "";
+
+  if (action === "products") {
+    return jsonpResponse(event, {
+      ok: true,
+      products: getProducts()
+    });
   }
 
-}
-
-export function getProducts() {
-  setupDatabase();
-  return readList(PRODUCTS_KEY).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-}
-
-export function saveProduct(product) {
-  const products = getProducts();
-  const payload = {
-    ...product,
-    id: product.id || createId(product.name),
-    price: Number(product.price) || 0,
-    updatedAt: new Date().toISOString()
-  };
-
-  const index = products.findIndex((item) => item.id === payload.id);
-
-  if (index >= 0) {
-    products[index] = payload;
-  } else {
-    payload.createdAt = new Date().toISOString();
-    products.push(payload);
+  if (action === "orders") {
+    return jsonpResponse(event, {
+      ok: true,
+      orders: getOrders()
+    });
   }
 
-  saveList(PRODUCTS_KEY, products);
-  notifyDatabaseChanged();
-  return payload;
-}
-
-export function deleteProduct(productId) {
-  saveList(PRODUCTS_KEY, getProducts().filter((product) => product.id !== productId));
-  notifyDatabaseChanged();
-}
-
-export function restoreDefaultProducts() {
-  saveList(PRODUCTS_KEY, defaultProducts);
-  notifyDatabaseChanged();
-}
-
-export function replaceProducts(products) {
-  if (!Array.isArray(products)) return;
-
-  saveList(PRODUCTS_KEY, products.filter((product) => product && product.name));
-  notifyDatabaseChanged();
-}
-
-export function getOrders() {
-  return [];
-}
-
-export function saveOrder(order) {
-  return {
-    ...order,
-    status: order.status || "Recebido"
-  };
-}
-
-export function updateOrderStatus(orderId, status) {
-  return { orderId, status };
-}
-
-export function deleteOrder(orderId) {
-  return orderId;
-}
-
-export function onDatabaseChange(callback) {
-  window.addEventListener(DATABASE_EVENT, callback);
-  window.addEventListener("storage", (event) => {
-    if (event.key === PRODUCTS_KEY) {
-      callback();
-    }
+  return jsonpResponse(event, {
+    ok: true,
+    message: "Karol Dubuc pedidos online"
   });
 }
 
-function readList(key) {
-  try {
-    const data = JSON.parse(localStorage.getItem(key) || "[]");
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
+function doPost(event) {
+  const data = JSON.parse(event.postData.contents || "{}");
+  const action = data.action || "saveOrder";
+
+  if (action === "saveProduct") {
+    saveProduct(data.product || {});
+    return jsonResponse({ ok: true });
+  }
+
+  if (action === "deleteProduct") {
+    deleteProduct(data.productId || "");
+    return jsonResponse({ ok: true });
+  }
+
+  if (action === "replaceProducts") {
+    replaceProducts(data.products || []);
+    return jsonResponse({ ok: true });
+  }
+
+  if (action === "updateOrderStatus") {
+    updateOrderStatus(data.orderId || "", data.status || "Recebido");
+    return jsonResponse({ ok: true });
+  }
+
+  if (action === "deleteOrder") {
+    deleteOrder(data.orderId || "");
+    return jsonResponse({ ok: true });
+  }
+
+  saveOrder(data.order || data);
+  return jsonResponse({ ok: true });
+}
+
+function getProducts() {
+  const sheet = getProductsSheet();
+  const values = sheet.getDataRange().getValues();
+
+  return values
+    .slice(1)
+    .filter((row) => row[0] && String(row[5] || "SIM").toUpperCase() !== "NAO")
+    .map((row) => ({
+      id: String(row[0]),
+      name: String(row[1] || ""),
+      description: String(row[2] || ""),
+      price: Number(row[3]) || 0,
+      image: String(row[4] || "")
+    }));
+}
+
+function saveProduct(product) {
+  const sheet = getProductsSheet();
+  const id = product.id || createId(product.name || "produto");
+  const values = sheet.getDataRange().getValues();
+  const rowIndex = values.findIndex((row, index) => index > 0 && String(row[0]) === String(id));
+  const row = [
+    id,
+    product.name || "",
+    product.description || "",
+    Number(product.price) || 0,
+    product.image || "",
+    "SIM",
+    new Date()
+  ];
+
+  if (rowIndex >= 0) {
+    sheet.getRange(rowIndex + 1, 1, 1, row.length).setValues([row]);
+    return;
+  }
+
+  sheet.appendRow(row);
+}
+
+function deleteProduct(productId) {
+  const sheet = getProductsSheet();
+  const values = sheet.getDataRange().getValues();
+
+  for (let index = values.length - 1; index >= 1; index -= 1) {
+    if (String(values[index][0]) === String(productId)) {
+      sheet.deleteRow(index + 1);
+      return;
+    }
   }
 }
 
-function saveList(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+function replaceProducts(products) {
+  const sheet = getProductsSheet();
+
+  sheet.clear();
+  writeProductHeader(sheet);
+
+  products.forEach((product) => {
+    sheet.appendRow([
+      product.id || createId(product.name || "produto"),
+      product.name || "",
+      product.description || "",
+      Number(product.price) || 0,
+      product.image || "",
+      "SIM",
+      new Date()
+    ]);
+  });
 }
 
-function notifyDatabaseChanged() {
-  window.dispatchEvent(new CustomEvent(DATABASE_EVENT));
+function saveOrder(order) {
+  const sheet = getOrdersSheet();
+
+  sheet.appendRow([
+    new Date(),
+    order.commandNumber || "",
+    order.customerName || "",
+    order.customerPhone || "",
+    order.orderDay || "",
+    order.deliveryMethod || "",
+    order.address || "",
+    order.itemsText || "",
+    order.notes || "",
+    order.total || 0,
+    order.status || "Recebido"
+  ]);
+}
+
+function getOrders() {
+  const sheet = getOrdersSheet();
+  const values = sheet.getDataRange().getValues();
+
+  return values
+    .slice(1)
+    .filter((row) => row[2])
+    .map((row, index) => ({
+      id: "row-" + (index + 2),
+      createdAt: row[0],
+      commandNumber: row[1] || index + 1,
+      customerName: String(row[2] || ""),
+      customerPhone: String(row[3] || ""),
+      orderDay: String(row[4] || ""),
+      deliveryMethod: String(row[5] || ""),
+      address: String(row[6] || ""),
+      itemsText: String(row[7] || ""),
+      notes: String(row[8] || ""),
+      total: Number(row[9]) || 0,
+      status: String(row[10] || "Recebido")
+    }));
+}
+
+function updateOrderStatus(orderId, status) {
+  const sheet = getOrdersSheet();
+  const rowNumber = getOrderRowNumber(orderId, sheet);
+
+  if (!rowNumber) return;
+
+  sheet.getRange(rowNumber, 11).setValue(status || "Recebido");
+}
+
+function deleteOrder(orderId) {
+  const sheet = getOrdersSheet();
+  const rowNumber = getOrderRowNumber(orderId, sheet);
+
+  if (!rowNumber) return;
+
+  sheet.deleteRow(rowNumber);
+}
+
+function getOrderRowNumber(orderId, sheet) {
+  const match = String(orderId || "").match(/^row-(\d+)$/);
+  const rowNumber = match ? Number(match[1]) : 0;
+
+  if (rowNumber < 2 || rowNumber > sheet.getLastRow()) {
+    return 0;
+  }
+
+  return rowNumber;
+}
+
+function getProductsSheet() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = spreadsheet.getSheetByName(PRODUCTS_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(PRODUCTS_SHEET_NAME);
+  }
+
+  if (sheet.getLastRow() === 0) {
+    writeProductHeader(sheet);
+    DEFAULT_PRODUCTS.forEach((row) => sheet.appendRow([...row, new Date()]));
+  }
+
+  return sheet;
+}
+
+function getOrdersSheet() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = spreadsheet.getSheetByName(ORDERS_SHEET_NAME);
+
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(ORDERS_SHEET_NAME);
+  }
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      "Data e hora",
+      "Comanda",
+      "Cliente",
+      "Telefone",
+      "Dia desejado",
+      "Entrega ou retirada",
+      "Endereco",
+      "Itens",
+      "Observacao",
+      "Total",
+      "Status"
+    ]);
+  }
+
+  return sheet;
+}
+
+function writeProductHeader(sheet) {
+  sheet.appendRow([
+    "ID",
+    "Nome",
+    "Descricao",
+    "Preco",
+    "Imagem",
+    "Ativo",
+    "Atualizado em"
+  ]);
+}
+
+function jsonResponse(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function jsonpResponse(event, data) {
+  const callback = event.parameter.callback;
+
+  if (callback) {
+    return ContentService
+      .createTextOutput(`${callback}(${JSON.stringify(data)});`)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  return jsonResponse(data);
 }
 
 function createId(value) {
-  const slug = String(value || "item")
+  return String(value || "item")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-
-  return `${slug || "item"}-${Date.now()}`;
+    .replace(/(^-|-$)/g, "") + "-" + Date.now();
 }

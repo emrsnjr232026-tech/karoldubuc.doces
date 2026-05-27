@@ -1,35 +1,265 @@
-# Publicar o site gratuitamente
+import { googleSheetsWebhookUrl } from "./integrations-config.js";
+import {
+  getProducts,
+  onDatabaseChange,
+  replaceProducts,
+  saveOrder,
+  setupDatabase
+} from "./database.js";
 
-## Opcao mais simples: Netlify Drop
+const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL"
+});
 
-1. Acesse `https://app.netlify.com/drop`.
-2. Arraste a pasta `Site Karol Dubuc Pedidos` para a tela.
-3. O Netlify gera um link publico gratuito.
-4. Depois voce pode trocar o nome do link nas configuracoes do site.
+const productGrid = document.getElementById("product-grid");
+const summaryList = document.getElementById("summary-list");
+const summaryTotalElement = document.getElementById("summary-total");
+const orderForm = document.getElementById("order-form");
+const sendOrderButton = document.getElementById("send-order");
 
-## Antes de divulgar
+let products = [];
+const cart = {};
 
-- A senha do admin e `Deus.Deus@26`.
-- O admin fica em `/admin.html`.
-- A pagina admin esta marcada como `noindex`, para nao aparecer no Google.
-- Para receber pedidos de celulares diferentes em uma planilha unica, configure o Google Apps Script usando `google-apps-script-comandas.gs` e cole a URL em `integrations-config.js`.
+setupDatabase();
+loadProducts();
+renderProducts();
+renderSummary();
+syncProductsFromOnline();
 
-## Importante sobre pedidos
+onDatabaseChange(() => {
+  loadProducts();
+  renderProducts();
+  renderSummary();
+});
 
-O banco local salva no navegador usado. Isso funciona para testar e controlar em um computador, mas clientes reais acessando de celulares diferentes precisam enviar os pedidos para um destino online.
+function loadProducts() {
+  products = getProducts();
+}
 
-Para isso, use a integracao com Google Sheets:
+async function syncProductsFromOnline() {
+  if (!googleSheetsWebhookUrl) return;
 
-1. Crie uma planilha no Google Sheets.
-2. Abra `Extensoes > Apps Script`.
-3. Cole o conteudo de `google-apps-script-comandas.gs`.
-4. Publique como `App da Web`.
-5. Copie a URL gerada.
-6. Cole a URL em `integrations-config.js`, no campo `googleSheetsWebhookUrl`.
+  try {
+    const onlineProducts = await loadProductsFromGoogleSheets();
 
-Depois disso, a planilha passa a ter duas abas:
+    if (Array.isArray(onlineProducts)) {
+      replaceProducts(onlineProducts);
+      loadProducts();
+      renderProducts();
+      renderSummary();
+    }
+  } catch (error) {
+    console.warn("Nao foi possivel carregar o cardapio online. Usando cardapio local.", error);
+  }
+}
 
-- `Cardapio`: itens que aparecem no site para os clientes.
-- `Comandas`: pedidos recebidos.
+function getSelectedProducts() {
+  return products
+    .filter((product) => (cart[product.id] || 0) > 0)
+    .map((product) => {
+      const quantity = cart[product.id];
+      const unitPrice = Number(product.price) || 0;
 
-Quando voce cadastrar, editar ou excluir produto no admin, o site envia a mudanca para a aba `Cardapio`. Quando o cliente abrir o `index.html`, ele busca essa aba para mostrar o cardapio da semana.
+      return {
+        id: product.id,
+        name: product.name,
+        quantity,
+        unitPrice,
+        total: quantity * unitPrice
+      };
+    });
+}
+
+function getOrderTotal(items) {
+  return items.reduce((total, item) => total + item.total, 0);
+}
+
+function renderProducts() {
+  if (!productGrid) return;
+
+  productGrid.innerHTML = "";
+
+  if (!products.length) {
+    productGrid.innerHTML = '<p class="empty">Nenhum produto cadastrado no momento.</p>';
+    return;
+  }
+
+  products.forEach((product) => {
+    const quantity = cart[product.id] || 0;
+    const image = product.image || "assets/post-agenda.png";
+
+    const card = document.createElement("article");
+    card.className = "product-card";
+
+    card.innerHTML = `
+      <div>
+        <img src="${image}" alt="${product.name}" class="product-image" />
+        <h3>${product.name}</h3>
+        <p>${product.description || ""}</p>
+        <span class="price">${currencyFormatter.format(Number(product.price) || 0)}</span>
+      </div>
+
+      <div class="quantity">
+        <button type="button" data-action="decrease" data-id="${product.id}" aria-label="Diminuir ${product.name}">-</button>
+        <span>${quantity}</span>
+        <button type="button" data-action="increase" data-id="${product.id}" aria-label="Aumentar ${product.name}">+</button>
+      </div>
+    `;
+
+    productGrid.appendChild(card);
+  });
+}
+
+productGrid?.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const productId = button.dataset.id;
+  const currentQuantity = cart[productId] || 0;
+
+  if (button.dataset.action === "increase") {
+    cart[productId] = currentQuantity + 1;
+  }
+
+  if (button.dataset.action === "decrease") {
+    cart[productId] = Math.max(0, currentQuantity - 1);
+  }
+
+  renderProducts();
+  renderSummary();
+});
+
+function renderSummary() {
+  if (!summaryList) return;
+
+  const selectedProducts = getSelectedProducts();
+  summaryList.innerHTML = "";
+
+  if (!selectedProducts.length) {
+    summaryList.innerHTML = '<p class="empty">Escolha pelo menos um doce para montar seu pedido.</p>';
+  }
+
+  selectedProducts.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "summary-item";
+    row.innerHTML = `
+      <span><strong>${item.quantity}x</strong> ${item.name}</span>
+      <strong>${currencyFormatter.format(item.total)}</strong>
+    `;
+    summaryList.appendChild(row);
+  });
+
+  if (summaryTotalElement) {
+    summaryTotalElement.textContent = currencyFormatter.format(getOrderTotal(selectedProducts));
+  }
+}
+
+sendOrderButton?.addEventListener("click", handleSubmitOrder);
+
+async function handleSubmitOrder() {
+  const customerName = document.getElementById("customer-name").value.trim();
+  const customerPhone = document.getElementById("customer-phone").value.trim();
+  const orderDay = document.getElementById("order-day").value;
+  const deliveryMethod = document.getElementById("delivery-method").value;
+  const address = document.getElementById("address").value.trim();
+  const notes = document.getElementById("notes").value.trim();
+  const selectedProducts = getSelectedProducts();
+
+  if (!orderForm.reportValidity()) return;
+
+  if (!selectedProducts.length) {
+    alert("Escolha pelo menos um produto.");
+    return;
+  }
+
+  sendOrderButton.disabled = true;
+  sendOrderButton.textContent = "Enviando pedido...";
+
+  try {
+    const order = saveOrder({
+      customerName,
+      customerPhone,
+      orderDay,
+      deliveryMethod,
+      address,
+      notes,
+      items: selectedProducts,
+      itemsText: selectedProducts.map((item) => `${item.quantity}x ${item.name}`).join(" | "),
+      total: getOrderTotal(selectedProducts),
+      status: "Recebido"
+    });
+
+    await sendOrderToGoogleSheets(order);
+
+    Object.keys(cart).forEach((key) => {
+      delete cart[key];
+    });
+
+    orderForm.reset();
+    renderProducts();
+    renderSummary();
+    alert(`Pedido enviado! Sua comanda e ${order.queueNumber || order.commandNumber}.`);
+  } catch (error) {
+    console.error(error);
+    alert("Nao foi possivel enviar o pedido. Tente novamente em instantes.");
+  } finally {
+    sendOrderButton.disabled = false;
+    sendOrderButton.textContent = "Finalizar pedido";
+  }
+}
+
+async function sendOrderToGoogleSheets(order) {
+  if (!googleSheetsWebhookUrl) return;
+
+  try {
+    await fetch(googleSheetsWebhookUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "saveOrder",
+        order
+      })
+    });
+  } catch (error) {
+    console.warn("Pedido salvo no banco local, mas nao enviado para a planilha.", error);
+  }
+}
+
+function loadProductsFromGoogleSheets() {
+  const callbackName = `karolCatalogCallback_${Date.now()}`;
+  const url = new URL(googleSheetsWebhookUrl);
+
+  url.searchParams.set("action", "products");
+  url.searchParams.set("callback", callbackName);
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    const timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Tempo esgotado ao carregar cardapio online."));
+    }, 8000);
+
+    window[callbackName] = (data) => {
+      cleanup();
+      resolve(Array.isArray(data?.products) ? data.products : []);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Erro ao carregar cardapio online."));
+    };
+
+    script.src = url.toString();
+    document.body.appendChild(script);
+
+    function cleanup() {
+      window.clearTimeout(timeoutId);
+      delete window[callbackName];
+      script.remove();
+    }
+  });
+}

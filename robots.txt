@@ -1,15 +1,3 @@
-[build]
-  publish = "."
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    X-Frame-Options = "SAMEORIGIN"
-
-[[headers]]
-  for = "/admin.html"
-  [headers.values]
-    X-Robots-Tag = "noindex, nofollow"
+User-agent: *
+Disallow: /admin.html
 
