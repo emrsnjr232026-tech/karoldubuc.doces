@@ -381,9 +381,6 @@ adminForm?.addEventListener(
     let image =
       currentProduct?.image || "";
 
-   let image =
-  currentProduct?.image || "";
-
 if (imageFile) {
 
   try {
