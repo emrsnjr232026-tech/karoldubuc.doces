@@ -380,65 +380,27 @@ adminForm?.addEventListener(
 
     let image =
       currentProduct?.image || "";
-
 if (imageFile) {
 
   try {
 
-    const base64 =
+    image =
       await convertImageToBase64(
         imageFile
       );
-
-    const response =
-      await fetch(
-        googleSheetsWebhookUrl,
-        {
-
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "text/plain;charset=utf-8"
-          },
-
-          body: JSON.stringify({
-
-            action:
-              "uploadImage",
-
-            image:
-              base64,
-
-            fileName:
-              name
-          })
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if (!data.ok) {
-
-      throw new Error(
-        "Erro upload"
-      );
-    }
-
-    image = data.url;
 
   } catch (error) {
 
     console.error(error);
 
     alert(
-      "Erro ao enviar imagem."
+      "Erro ao processar imagem."
     );
 
     return;
   }
 }
+
     const savedProduct = {
 
       id:
